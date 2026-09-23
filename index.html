@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tungtungtung Sahur in The Backrooms - Virtual Pet Game</title>
+  <meta name="description" content="Rawat entitas misterius Tungtungtung Sahur di dimensi Backrooms Level 0. Beri makan, minum, bersihkan kotorannya, jangan sampai dia marah dan memukuli layarmu atau meninggal!">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Main Game Container -->
+  <div id="game-viewport" class="room-hallway">
+
+    <!-- Backrooms Dynamic Wallpaper Background -->
+    <div class="backrooms-bg"></div>
+
+    <!-- Fluorescent Lamp Fixture with Flicker -->
+    <div id="fluorescent-lamp"></div>
+
+    <!-- Retro CRT & VHS Scanline Overlay -->
+    <div class="crt-overlay"></div>
+
+    <!-- TOP HUD: Stats & Level Indicator -->
+    <header id="hud-container">
+      <div class="hud-top-bar">
+        <div class="level-tag">
+          <span style="color:#ef4444;">●</span>
+          <span id="room-tag-text">LEVEL 0 - LORONG KUNING</span>
+        </div>
+
+        <div class="header-actions">
+          <div class="coin-counter">
+            <span>🪙</span>
+            <span id="coin-count">60</span>
+          </div>
+          <button id="btn-audio-toggle" class="icon-btn" title="Toggle Suara">🔊 Audio</button>
+          <button id="btn-crt-toggle" class="icon-btn" title="Toggle CRT Filter">📺 CRT</button>
+        </div>
+      </div>
+
+      <!-- Gauges Grid -->
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">
+            <span>🍗 Lapar</span>
+          </div>
+          <div class="stat-progress-bg">
+            <div id="gauge-hunger" class="stat-progress-fill fill-hunger" style="width: 80%;"></div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-label">
+            <span>💧 Haus</span>
+          </div>
+          <div class="stat-progress-bg">
+            <div id="gauge-thirst" class="stat-progress-fill fill-thirst" style="width: 75%;"></div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-label">
+            <span>🧼 Bersih</span>
+          </div>
+          <div class="stat-progress-bg">
+            <div id="gauge-hygiene" class="stat-progress-fill fill-hygiene" style="width: 90%;"></div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-label">
+            <span>⚡ Energi</span>
+          </div>
+          <div class="stat-progress-bg">
+            <div id="gauge-energy" class="stat-progress-fill fill-energy" style="width: 85%;"></div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-label">
+            <span>🧠 Waras</span>
+          </div>
+          <div class="stat-progress-bg">
+            <div id="gauge-sanity" class="stat-progress-fill fill-sanity" style="width: 80%;"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE STAGE -->
+    <main id="game-stage">
+      <!-- Speech & Sahur Shout Bubble -->
+      <div id="speech-bubble">TUNG! TUNG! TUNG! SAHURRR!</div>
+
+      <!-- Bedroom Pull Cord Light Switch -->
+      <div id="bedroom-lamp-cord" class="bedroom-lamp-cord" title="Tarik tali untuk matikan/hidupkan lampu kamar tidur">
+        <div class="cord-string"></div>
+        <div class="cord-handle"></div>
+      </div>
+
+      <!-- Poop Layer (Random poops across rooms) -->
+      <div id="poop-layer" class="poop-container"></div>
+
+      <!-- Tungtungtung Sahur Interactive Canvas -->
+      <canvas id="character-canvas"></canvas>
+
+      <!-- Carpet Floor Visuals with Mold Patches -->
+      <div class="carpet-floor">
+        <div class="mold-patch" style="left: 15%; top: 40px;"></div>
+        <div class="mold-patch" style="right: 20%; top: 80px;"></div>
+      </div>
+
+      <!-- Screen Crack Canvas (For Angry Jumpscare Attack) -->
+      <canvas id="screen-crack-canvas"></canvas>
+    </main>
+
+    <!-- BOTTOM CONTROLS & INVENTORY SHELF -->
+    <footer id="bottom-shelf">
+      <!-- Room Navigation Bar -->
+      <nav class="room-nav-bar" aria-label="Navigasi Ruangan Backrooms">
+        <button class="room-nav-btn active" data-room="hallway">
+          <span style="font-size: 1.3rem;">🚪</span>
+          <span>Lorong</span>
+        </button>
+        <button class="room-nav-btn" data-room="kitchen">
+          <span style="font-size: 1.3rem;">🍜</span>
+          <span>Pantry</span>
+        </button>
+        <button class="room-nav-btn" data-room="bathroom">
+          <span style="font-size: 1.3rem;">🛁</span>
+          <span>Kamar Mandi</span>
+        </button>
+        <button class="room-nav-btn" data-room="bedroom">
+          <span style="font-size: 1.3rem;">🛏️</span>
+          <span>Bilik Tidur</span>
+        </button>
+        <button class="room-nav-btn" data-room="arcade">
+          <span style="font-size: 1.3rem;">🕹️</span>
+          <span>Pelarian</span>
+        </button>
+      </nav>
+
+      <!-- Items Tray Shelf -->
+      <div id="items-tray" class="items-tray-container">
+        <!-- Dynamically populated depending on current room -->
+      </div>
+    </footer>
+
+    <!-- Floating Item Drag Ghost Element -->
+    <div id="drag-ghost"></div>
+
+    <!-- MODAL 1: ANGRY ATTACK & SCREEN CRACK BEATDOWN -->
+    <div id="modal-attack" class="modal-overlay">
+      <div class="modal-card">
+        <div style="font-size: 3rem; margin-bottom: 8px;">💥😡💥</div>
+        <h2 class="modal-title" style="color: #ef4444;">KAMU DIPUKULI HINGGA RETAK!</h2>
+        <p class="modal-desc">
+          Tungtungtung Sahur mengamuk hebat karena dibiarkan kelaparan dan kehausan di Backrooms! Dia melompat ke layar dan memukulimu dengan pemukul kentongan kayu hingga kacamu hancur berantakan!
+        </p>
+        <button id="btn-apologize-treat" class="modal-btn" style="background:#ef4444; color:#fff;">
+          Beri Ransum Darurat & Minta Maaf 🥣
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL 2: DEPRESSION & PASSING AWAY (MENINGGAL) -->
+    <div id="modal-death" class="modal-overlay">
+      <div class="modal-card">
+        <div style="font-size: 3.5rem; margin-bottom: 8px;">🪦👻</div>
+        <h2 class="modal-title" style="color: #94a3b8;">TUNGTUNGTUNG TELAH BERPULANG</h2>
+        <p class="modal-desc">
+          Karena kesepian, kelaparan, dan tak terawat di dinginnya level 0 Backrooms, Tungtungtung Sahur menangis tersedu-sedu hingga arwahnya melayang ke alam baka...
+        </p>
+        <button id="btn-revive-ritual" class="modal-btn" style="background:#10b981; color:#fff;">
+          Lakukan Ritual Air Almond Sahur (Revive) ✨
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL 3: ARCADE MINI-GAME (ESCAPE THE SMILER) -->
+    <div id="modal-arcade" class="modal-overlay">
+      <div class="modal-card" style="max-width: 650px;">
+        <h2 class="modal-title">PELARIAN DARI SMILER</h2>
+        <p style="font-size: 0.85rem; color: #fde047; margin-bottom: 8px;">
+          Lompat [Spasi / Tap Kiri] • Hempaskan Smiler dengan Kentongan [X / Tap Kanan]
+        </p>
+        <div id="minigame-container"></div>
+        <button id="btn-close-arcade" class="modal-btn">Kembali ke Lorong</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="src/audio.js"></script>
+  <script src="src/items.js"></script>
+  <script src="src/character.js"></script>
+  <script src="src/minigame.js"></script>
+  <script src="src/game.js"></script>
+</body>
+</html>
