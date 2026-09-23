@@ -7,20 +7,22 @@ Game simulasi merawat virtual pet horor-komedi yang terinspirasi dari gameplay *
 ## 🌟 Fitur Utama
 
 ### 1. Sistem Kebutuhan & Perawatan (Survival Stats)
-* **🍗 Lapar (Hunger)**: Menurun seiring waktu. Beri makan berbagai hidangan sahur seperti *Apel Segar*, *Kue Tart Sahur*, *Indomie Telur*, *Rendang Daging*, hingga *Ransum Level 0*.
-* **💧 Haus (Thirst)**: Menurun seiring waktu. Sediakan minuman penghilang dahaga seperti *Air Mineral*, *Jus Jeruk*, *Almond Water Backrooms*, *Kopi Sahur*, dan *Boba Brown Sugar*.
-* **🧼 Kebersihan (Hygiene)**: Menurun jika kotor dan anjlok drastis jika Tungtung BAB/pup. Bersihkan tubuhnya dengan spons berbusa atau bersihkan lantai dengan mop.
+* **🍗 Lapar (Hunger)**: Menurun seiring waktu. Beri makan berbagai hidangan sahur seperti *Apel Segar*, *Kue Tart Sahur*, *Indomie Telur*, *Rendang Daging*, hingga *Ransum Level 0*. Kelaparan memicu perut keroncongan, amarah, sakit perut, hingga tangisan kejer!
+* **💧 Haus (Thirst)**: Menurun seiring waktu. Sediakan minuman penghilang dahaga seperti *Air Mineral*, *Jus Jeruk*, *Almond Water Backrooms*, *Kopi Sahur*, *Boba*, dan *Teh Jahe Hangat*. Dehidrasi menyebabkan tenggorokan kering, lemas, sakit demam, dan tangisan histeris.
+* **🧼 Kebersihan (Hygiene)**: Menurun jika kotor dan anjlok drastis jika Tungtung BAB/pup. Bersihkan tubuhnya dengan spons berbusa atau bersihkan lantai dengan mop. Ruangan kotor dapat memicu Tungtung jatuh sakit!
 * **⚡ Energi (Energy)**: Dihabiskan untuk aktivitas dan mini-game. Bawa Tungtung ke Bilik Tidur (*Bedroom*) dan tarik tali lampu untuk mematikan lampu neon Backrooms agar ia tertidur lelap (*Zzz*).
 * **🧠 Kewarasan (Sanity)**: Terjaga jika lingkungan bersih, perut kenyang, sering diajak bermain, ditabuh kentongannya, atau diberi *Almond Water*.
+* **🩹 Kesehatan & Pengobatan (Health)**: Sediakan *Sirup Obat Maag & Meriang*, *Teh Jahe Hangat*, serta *Kompres Dingin Demam* untuk merawat Tungtung saat ia jatuh sakit, masuk angin, atau meriang.
 
 ---
 
-### 2. Ekspresi Emosi & Responsivitas
-* **Gembira (Happy)**: Tersenyum lebar, mata bersinar, bergoyang riang, dan membunyikan kentongan *"Tung tung tung sahurrr!"*.
-* **Sedih (Sad)**: Mata berair sayu, bibir melengkung ke bawah, merengek pelan.
-* **Menangis (Crying)**: Mengeluarkan banjir air mata di sudut lorong karpet kuning Backrooms dengan suara tangisan sesenggukan.
-* **BAB / Pup Sembarangan**: Animasi mengejan dengan suara kentut lucu, meninggalkan kotoran berasap di lantai lorong atau ruangan mana pun yang harus segera disapu (+5 Koin per kotoran).
-* **Marah & Mengamuk (Angry / Amok)**: Mata merah menyala membara, mendengus geram jika diabaikan.
+### 2. Ekspresi Emosi yang Dipicu Rasa Lapar & Haus
+* **Gembira (Happy)**: Saat lapar dan haus terpenuhi (> 65%), Tungtung kenyang, tersenyum lebar dengan pipi merona riang, bergoyang sahur, dan membunyikan irama kentongan *"Tung tung tung sahurrr!"*.
+* **Sedih & Keroncongan (Sad)**: Saat lapar atau haus mulai menipis (< 45%), terdengar suara perut keroncongan (*stomach rumble*), mata sayu, dan bibir kering murung.
+* **Marah & Mengamuk (Angry / Hangry Rage)**: Jika dibiarkan lapar atau haus parah (< 20%), Tungtung masuk ke mode *hangry*! Matanya berubah merah membara, memukul kentongan dengan kasar dan cepat menuntut makanan sahur!
+* **Sakit & Meriang (Sick / Demam & Mules)**: Jika terlalu lama kelaparan/kehausan atau makan ransum basi Backrooms, kulitnya berubah pucat kehijauan, matanya berputar pusing (`@_@`), dahinya dipasangi kompres demam, mulutnya menggigit termometer, dan tangannya memegangi perut sambil merintih kesakitan!
+* **Mules & Pup Sembarangan (Pooping / Diare)**: Setelah makan santapan pedas (Indomie/Rendang) atau saat perutnya bermasalah, perutnya mulas mendadak sebelum mengejan dan mengeluarkan pup di lantai!
+* **Mengnaigs / Menangis Kejer (Crying / Sobbing)**: Saat lapar atau haus mencapai titik kritis 0, Tungtung langsung menangis histeris (*mengnaigs*), meneteskan air mata banjir di karpet lorong kuning dengan suara tangisan yang kencang!
 
 ---
 

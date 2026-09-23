@@ -20,6 +20,7 @@ class TungGame {
     this.isSleeping = false;
     this.isDead = false;
     this.isAttacking = false;
+    this.isSick = false;
     this.poopList = []; // { id, room, x, y }
 
     // Timers
@@ -28,6 +29,9 @@ class TungGame {
     this.speechTimer = null;
     this.amokTimer = 0;
     this.starveTimer = 0;
+    this.rumbleCooldown = 0;
+    this.mulesTimer = 0;
+    this.sickTimer = 0;
 
     // Dragging item
     this.draggedItem = null;
@@ -286,13 +290,13 @@ class TungGame {
         this.shelfTray.appendChild(card);
       });
     } else if (this.currentRoom === 'bathroom') {
-      // Show Cleaning Tools
+      // Show Cleaning Tools & Medical Compress
       window.ITEMS_DB.tools.forEach((tool) => {
         const card = document.createElement('div');
         card.className = 'item-card';
         card.innerHTML = `
           <div class="item-icon-box">
-            ${tool.id === 'sponge' ? '🧽' : tool.id === 'mop' ? '🧹' : '🥢'}
+            ${tool.id === 'sponge' ? '🧽' : tool.id === 'mop' ? '🧹' : tool.id === 'thermometer' ? '🩹' : '🥢'}
           </div>
           <div class="item-name">${tool.name}</div>
         `;
@@ -302,6 +306,8 @@ class TungGame {
             this.useSponge();
           } else if (tool.id === 'mop') {
             this.cleanAllPoopsInRoom();
+          } else if (tool.id === 'thermometer') {
+            this.cureFeverTool();
           } else {
             this.character.beatKentongan();
             if (window.soundEngine) window.soundEngine.playSahurRhythm();
@@ -352,27 +358,68 @@ class TungGame {
     this.dragGhost.style.top = `${e.clientY}px`;
   }
 
+  cureFeverTool() {
+    if (this.isSick) {
+      this.isSick = false;
+      this.stats.sanity = Math.min(100, this.stats.sanity + 30);
+      if (window.soundEngine) window.soundEngine.playCoin();
+      this.showSpeech('Kompres dingin adem banget! Demam & sakit perut sembuh!', 2500);
+      this.evaluateMood();
+      this.updateHUD();
+    } else {
+      this.showSpeech('Tungtungtung sedang tidak sakit demam.', 1800);
+    }
+  }
+
   feedItem(item) {
     if (this.stats.coins < item.cost) return;
 
     this.stats.coins -= item.cost;
+
+    const wasHungry = this.stats.hunger < 35;
+    const wasThirsty = this.stats.thirst < 35;
 
     if (item.type === 'food') {
       this.stats.hunger = Math.min(100, this.stats.hunger + item.hunger);
       if (item.thirst) this.stats.thirst = Math.max(0, Math.min(100, this.stats.thirst + item.thirst));
       if (item.sanity) this.stats.sanity = Math.max(0, Math.min(100, this.stats.sanity + item.sanity));
       if (window.soundEngine) window.soundEngine.playChomp();
-      this.showSpeech(`Nyam nyam! Enaknya ${item.name}!`, 1800);
-    } else if (item.type === 'drink') {
+
+      if (item.id === 'backrooms_ration') {
+        // Strange rations can cause sickness or mules!
+        if (Math.random() < 0.45) {
+          this.isSick = true;
+          if (window.soundEngine) window.soundEngine.playGroan();
+          this.showSpeech('Ugh! Ransum misterius Backrooms bikin perut mules & meriang!', 2500);
+        } else {
+          this.showSpeech('Nyam nyam.. ransum kering penahan lapar.', 1800);
+        }
+      } else if (item.id === 'indomie' || item.id === 'rendang') {
+        this.mulesTimer = 18 + Math.random() * 10;
+        this.showSpeech(wasHungry ? `LAPER BANGET! ${item.name.toUpperCase()} SAHUR MANTAP!` : `Nyam nyam! Enaknya ${item.name}!`, 2000);
+      } else {
+        this.showSpeech(wasHungry ? `LAPER BANGET! Akhirnya makan ${item.name}!` : `Nyam nyam! Enaknya ${item.name}!`, 1800);
+      }
+    } else if (item.type === 'drink' || item.type === 'medicine') {
       this.stats.thirst = Math.min(100, this.stats.thirst + item.thirst);
       if (item.hunger) this.stats.hunger = Math.min(100, this.stats.hunger + item.hunger);
       if (item.energy) this.stats.energy = Math.min(100, this.stats.energy + item.energy);
       if (item.sanity) this.stats.sanity = Math.min(100, this.stats.sanity + item.sanity);
       if (window.soundEngine) window.soundEngine.playGulp();
-      this.showSpeech(`Seger banget! Haus sahur hilang!`, 1800);
+
+      if (item.curesSick) {
+        this.isSick = false;
+        if (window.soundEngine) window.soundEngine.playCoin();
+        this.showSpeech('Alhamdulillah sirup obatnya manjur! Sakit maag & meriang sembuh!', 2500);
+      } else if (item.curesMules) {
+        this.mulesTimer = 0;
+        this.showSpeech('Teh jahe hangat meredakan mules perut & dahaga sahur!', 2200);
+      } else {
+        this.showSpeech(wasThirsty ? `HAUS BANGET! Seger banget tenggorokanku minum ${item.name}!` : `Gluk gluk! Segarnya ${item.name}!`, 1800);
+      }
     }
 
-    this.character.setMood('happy');
+    this.character.setMood(this.isSick ? 'sick' : 'happy');
     setTimeout(() => {
       if (!this.isDead && !this.isSleeping && !this.isAttacking) {
         this.evaluateMood();
@@ -518,18 +565,36 @@ class TungGame {
       this.character.setMood('angry');
       return;
     }
+    if (this.isSick) {
+      this.character.setMood('sick');
+      return;
+    }
 
-    // Emotion hierarchy
+    // Hunger and Thirst drive the emotions directly:
+    // 1. Extreme Crisis: Hunger == 0 OR Thirst == 0 -> MENGNAIGS (Crying uncontrollably)
     if (this.stats.hunger <= 0 || this.stats.thirst <= 0) {
       this.character.setMood('crying');
-      if (Math.random() < 0.05 && window.soundEngine) {
-        window.soundEngine.playCry();
+      if (Math.random() < 0.08 && window.soundEngine) {
+        window.soundEngine.playMengnaigs();
       }
-    } else if (this.stats.hunger < 25 || this.stats.thirst < 25 || this.stats.sanity < 25) {
+    }
+    // 2. Hangry & Dehydrated Rage: Hunger < 20 OR Thirst < 20 -> ANGRY
+    else if (this.stats.hunger < 20 || this.stats.thirst < 20) {
+      this.character.setMood('angry');
+      if (Math.random() < 0.03 && window.soundEngine) {
+        window.soundEngine.playAngryRoar();
+      }
+    }
+    // 3. Sad & Starving: Hunger < 45 OR Thirst < 45 OR Sanity < 30 -> SAD
+    else if (this.stats.hunger < 45 || this.stats.thirst < 45 || this.stats.sanity < 30) {
       this.character.setMood('sad');
-    } else if (this.stats.sanity > 65 && this.stats.hunger > 60 && this.stats.thirst > 60) {
+    }
+    // 4. Well-fed & Hydrated: Hunger > 65 AND Thirst > 65 AND Sanity > 60 -> HAPPY
+    else if (this.stats.hunger > 65 && this.stats.thirst > 65 && this.stats.sanity > 60) {
       this.character.setMood('happy');
-    } else {
+    }
+    // 5. Neutral
+    else {
       this.character.setMood('neutral');
     }
   }
@@ -730,8 +795,61 @@ class TungGame {
       }
 
       // Sanity responds to other stats
-      if (this.stats.hunger < 20 || this.stats.thirst < 20 || this.stats.hygiene < 20) {
+      if (this.stats.hunger < 25 || this.stats.thirst < 25 || this.stats.hygiene < 20) {
+        this.stats.sanity = Math.max(0, this.stats.sanity - dt * 0.7);
+      }
+
+      // Sickness trigger from prolonged neglect (starvation, thirst, or filthy environment)
+      if (this.stats.hunger < 15 || this.stats.thirst < 15 || this.stats.hygiene < 20) {
+        this.sickTimer += dt;
+        if (this.sickTimer > 14 && !this.isSick) {
+          this.isSick = true;
+          if (window.soundEngine) window.soundEngine.playGroan();
+          this.showSpeech('Tungtungtung jatuh sakit karena kelaparan/kehausan di Backrooms!', 3000);
+        }
+      } else {
+        this.sickTimer = Math.max(0, this.sickTimer - dt);
+      }
+
+      // Mules & Urgency timer (e.g. after spicy sahur food or bad rations)
+      if (this.mulesTimer > 0) {
+        this.mulesTimer -= dt;
+        if (this.mulesTimer <= 0) {
+          if (window.soundEngine) window.soundEngine.playStomachRumble();
+          this.showSpeech('ADUH MULES BANGET! KEBELET PUP!', 2000);
+          setTimeout(() => {
+            this.spawnPoop();
+          }, 1200);
+        }
+      }
+
+      // Stomach Rumble & Thirst dry sound/speech when low (< 45)
+      this.rumbleCooldown -= dt;
+      if ((this.stats.hunger < 45 || this.stats.thirst < 45) && this.rumbleCooldown <= 0) {
+        this.rumbleCooldown = 8 + Math.random() * 8;
+        if (window.soundEngine) window.soundEngine.playStomachRumble();
+        if (Math.random() < 0.4) {
+          if (this.stats.hunger < 35) {
+            this.showSpeech('Krucuuuk... perutku keroncongan lapar sahur!');
+          } else if (this.stats.thirst < 35) {
+            this.showSpeech('Tenggorokanku kering kerontang, haus...');
+          }
+        }
+      }
+
+      // Sickness extra penalty
+      if (this.isSick) {
         this.stats.sanity = Math.max(0, this.stats.sanity - dt * 0.6);
+        if (Math.random() < 0.012 && window.soundEngine) {
+          window.soundEngine.playGroan();
+          this.showSpeech('Aduh kepalaku pusing dan meriang.. butuh obat..', 2000);
+        }
+      }
+
+      // Crying (Mengnaigs) when hunger or thirst is 0
+      if ((this.stats.hunger <= 0 || this.stats.thirst <= 0) && Math.random() < 0.015 && window.soundEngine) {
+        window.soundEngine.playMengnaigs();
+        this.showSpeech('MENGNAIGSS!! HUWAA KELAPARAN/KEHAUSAN!!', 2000);
       }
 
       // Periodic poop spawning check (every 45-75 seconds on average)
@@ -741,7 +859,7 @@ class TungGame {
         this.spawnPoop();
       }
 
-      // Neglect consequences check
+      // Neglect consequences check: death from starvation & dehydration
       if (this.stats.hunger <= 0 && this.stats.thirst <= 0 && this.stats.sanity <= 5) {
         this.starveTimer += dt;
         if (this.starveTimer > 18) {
@@ -781,7 +899,8 @@ class TungGame {
     const data = {
       stats: this.stats,
       poopList: this.poopList,
-      isDead: this.isDead
+      isDead: this.isDead,
+      isSick: this.isSick
     };
     try {
       localStorage.setItem('tung_sahur_save', JSON.stringify(data));
@@ -798,6 +917,7 @@ class TungGame {
         if (parsed.stats) this.stats = Object.assign(this.stats, parsed.stats);
         if (parsed.poopList) this.poopList = parsed.poopList;
         if (parsed.isDead !== undefined) this.isDead = parsed.isDead;
+        if (parsed.isSick !== undefined) this.isSick = parsed.isSick;
       }
     } catch (e) {
       console.warn('Load error:', e);

@@ -208,6 +208,47 @@ const ITEMS_DB = {
           <line x1="38" y1="8" x2="28" y2="44" stroke="#e11d48" stroke-width="5" stroke-linecap="round"/>
         </svg>
       `
+    },
+    {
+      id: 'ginger_tea',
+      name: 'Teh Jahe Hangat',
+      type: 'drink',
+      cost: 20,
+      thirst: 45,
+      hunger: 5,
+      sanity: 25,
+      curesMules: true,
+      desc: 'Teh herbal jahe hangat pereda mules perut, kembung, dan rasa haus.',
+      icon: `
+        <svg viewBox="0 0 64 64" width="100%" height="100%">
+          <rect x="18" y="24" width="28" height="26" rx="6" fill="#ea580c" stroke="#9a3412" stroke-width="3"/>
+          <path d="M46 28 C52 28 54 36 46 40" stroke="#9a3412" stroke-width="3.5" fill="none"/>
+          <ellipse cx="32" cy="24" rx="14" ry="4" fill="#c2410c"/>
+          <circle cx="28" cy="34" r="3" fill="#fed7aa"/>
+          <circle cx="35" cy="40" r="2" fill="#fed7aa"/>
+          <path d="M28 16 Q30 10 27 6" stroke="#fdba74" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </svg>
+      `
+    },
+    {
+      id: 'medicine',
+      name: 'Sirup Obat Maag & Meriang',
+      type: 'medicine',
+      cost: 30,
+      thirst: 20,
+      hunger: 15,
+      sanity: 40,
+      curesSick: true,
+      desc: 'Sirup obat ajaib penawar sakit perut, meriang, dan pusing di Backrooms.',
+      icon: `
+        <svg viewBox="0 0 64 64" width="100%" height="100%">
+          <rect x="24" y="10" width="16" height="8" rx="2" fill="#94a3b8"/>
+          <path d="M22 18 L42 18 L46 54 L18 54 Z" fill="#f8fafc" stroke="#dc2626" stroke-width="3"/>
+          <rect x="22" y="28" width="20" height="24" fill="#ef4444" rx="2"/>
+          <rect x="30" y="32" width="4" height="16" fill="#ffffff"/>
+          <rect x="24" y="38" width="16" height="4" fill="#ffffff"/>
+        </svg>
+      `
     }
   ],
 
@@ -225,6 +266,13 @@ const ITEMS_DB = {
       type: 'tool',
       action: 'clean_poop',
       desc: 'Klik kotoran/pup yang berceceran di lantai untuk menyedot dan membersihkannya.'
+    },
+    {
+      id: 'thermometer',
+      name: 'Kompres & Obat Meriang',
+      type: 'tool',
+      action: 'cure_fever',
+      desc: 'Kompres dan rawat Tungtungtung Sahur saat dia meriang, sakit perut, atau demam.'
     },
     {
       id: 'beater',

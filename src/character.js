@@ -213,19 +213,43 @@ class TungSahurCharacter {
     }
 
     // Mood-specific particle spawners
-    if (this.mood === 'crying' && Math.random() < 0.3) {
+    if (this.mood === 'crying' && Math.random() < 0.5) {
       this.particles.push({
-        x: this.x + (Math.random() < 0.5 ? -35 : 35) + (Math.random() * 10 - 5),
+        x: this.x + (Math.random() < 0.5 ? -35 : 35) + (Math.random() * 14 - 7),
         y: this.y - 10,
-        vx: (Math.random() - 0.5) * 2,
-        vy: 2 + Math.random() * 4,
+        vx: (Math.random() - 0.5) * 3,
+        vy: 3 + Math.random() * 5,
         type: 'tear',
         alpha: 1.0,
-        scale: 0.6 + Math.random() * 0.5
+        scale: 0.8 + Math.random() * 0.6
       });
     }
 
-    if (this.mood === 'angry' && Math.random() < 0.2) {
+    if (this.mood === 'sick' && Math.random() < 0.3) {
+      this.particles.push({
+        x: this.x + (Math.random() * 70 - 35),
+        y: this.y - 45 - Math.random() * 30,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: -1 - Math.random() * 1.5,
+        type: 'germ',
+        alpha: 0.9,
+        scale: 0.7 + Math.random() * 0.5
+      });
+      // Sweat drop
+      if (Math.random() < 0.3) {
+        this.particles.push({
+          x: this.x + (Math.random() < 0.5 ? -45 : 45),
+          y: this.y - 40,
+          vx: 0,
+          vy: 2 + Math.random() * 2,
+          type: 'sweat',
+          alpha: 1.0,
+          scale: 0.7
+        });
+      }
+    }
+
+    if (this.mood === 'angry' && Math.random() < 0.25) {
       this.particles.push({
         x: this.x + (Math.random() * 80 - 40),
         y: this.y - 70,
@@ -285,6 +309,10 @@ class TungSahurCharacter {
     } else if (this.mood === 'pooping') {
       shakeX = (Math.random() - 0.5) * 4;
       shakeY = (Math.random() - 0.5) * 4;
+    } else if (this.mood === 'sick') {
+      // Shivering with fever & stomach ache
+      shakeX = (Math.random() - 0.5) * 3.5;
+      shakeY = (Math.random() - 0.5) * 3.5;
     } else if (this.mood === 'sleeping') {
       breathY = Math.sin(this.animTime * 1.2) * 6;
     }
@@ -317,6 +345,11 @@ class TungSahurCharacter {
     // 6. Draw Hands & Wooden Stick (Pemukul Kentongan)
     this.drawHands();
 
+    // 7. Draw Fever Cooling Patch if sick
+    if (this.mood === 'sick') {
+      this.drawFeverPatch();
+    }
+
     this.ctx.restore();
 
     // 7. Draw overlay particles
@@ -348,6 +381,12 @@ class TungSahurCharacter {
       grad.addColorStop(0, '#d97706');
       grad.addColorStop(0.7, '#854d0e');
       grad.addColorStop(1, '#451a03');
+    } else if (this.mood === 'sick') {
+      // Sickly pale green / fever wood
+      grad.addColorStop(0, '#bef264');
+      grad.addColorStop(0.45, '#65a30d');
+      grad.addColorStop(0.85, '#365314');
+      grad.addColorStop(1, '#1a2e05');
     } else {
       // Classic rich Teak / Jackfruit Wood (Kayu Kentongan)
       grad.addColorStop(0, '#c99452');
@@ -467,14 +506,38 @@ class TungSahurCharacter {
         ctx.moveTo(ex - side * 12, ey + 10);
         ctx.lineTo(ex - side * 4, ey + 4);
         ctx.stroke();
+      } else if (this.mood === 'sick') {
+        // Dizzy spinning spiral eyes (@_@)
+        const rot = this.animTime * 3.5 * side;
+        ctx.save();
+        ctx.translate(pupilX, pupilY);
+        ctx.rotate(rot);
+        ctx.strokeStyle = '#365314';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let a = 0; a < Math.PI * 3.5; a += 0.25) {
+          const rSp = 2 + a * 2.5;
+          const sx = Math.cos(a) * rSp;
+          const sy = Math.sin(a) * rSp;
+          if (a === 0) ctx.moveTo(sx, sy);
+          else ctx.lineTo(sx, sy);
+        }
+        ctx.stroke();
+        ctx.restore();
       } else if (this.mood === 'crying') {
-        // Big teary glossy pupil
-        ctx.arc(pupilX, pupilY, 15, 0, Math.PI * 2);
+        // Big teary glossy pupil with flooded waterline
+        ctx.arc(pupilX, pupilY, 16, 0, Math.PI * 2);
         ctx.fillStyle = '#0284c7';
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(pupilX, pupilY, 8, 0, Math.PI * 2);
+        ctx.arc(pupilX, pupilY, 9, 0, Math.PI * 2);
         ctx.fillStyle = '#0f172a';
+        ctx.fill();
+
+        // Shiny reflective tear gloss
+        ctx.beginPath();
+        ctx.arc(pupilX - 5, pupilY - 5, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.fill();
       } else {
         // Normal / Happy Pou-style giant expressive pupil
@@ -483,14 +546,16 @@ class TungSahurCharacter {
         ctx.fill();
       }
 
-      // Eye Gleam / Highlight sparkles
-      ctx.beginPath();
-      ctx.arc(pupilX - 4, pupilY - 4, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(pupilX + 4, pupilY + 4, 2, 0, Math.PI * 2);
-      ctx.fill();
+      // Eye Gleam / Highlight sparkles (for non-sick)
+      if (this.mood !== 'sick') {
+        ctx.beginPath();
+        ctx.arc(pupilX - 4, pupilY - 4, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(pupilX + 4, pupilY + 4, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       ctx.restore();
 
@@ -504,6 +569,10 @@ class TungSahurCharacter {
         // Sharp inward furrowed rage brows
         ctx.moveTo(ex - side * 22, ey - 22);
         ctx.lineTo(ex + side * 18, ey - 32);
+      } else if (this.mood === 'sick') {
+        // Distressed wavy fever brows
+        ctx.moveTo(ex - side * 18, ey - 22);
+        ctx.quadraticCurveTo(ex - side * 4, ey - 30, ex + side * 16, ey - 23);
       } else if (this.mood === 'sad' || this.mood === 'crying') {
         // Slanted downward sorrow brows
         ctx.moveTo(ex - side * 20, ey - 32);
@@ -527,13 +596,28 @@ class TungSahurCharacter {
     const ctx = this.ctx;
     if (this.mood === 'dead' || this.mood === 'angry') return;
 
-    // Rosy cute cheeks
+    // Rosy cute cheeks or pale greenish when sick
     const cheekY = -12;
     [-1, 1].forEach((side) => {
       ctx.beginPath();
       ctx.ellipse(side * 52, cheekY, 12, 7, 0, 0, Math.PI * 2);
-      ctx.fillStyle = this.mood === 'happy' ? 'rgba(244, 63, 94, 0.45)' : 'rgba(239, 68, 68, 0.25)';
+      if (this.mood === 'sick') {
+        ctx.fillStyle = 'rgba(101, 163, 13, 0.4)';
+      } else {
+        ctx.fillStyle = this.mood === 'happy' ? 'rgba(244, 63, 94, 0.45)' : 'rgba(239, 68, 68, 0.25)';
+      }
       ctx.fill();
+
+      // Tear streams cascading down cheeks when crying (Mengnaigs!)
+      if (this.mood === 'crying') {
+        ctx.beginPath();
+        ctx.moveTo(side * 42, -15);
+        ctx.quadraticCurveTo(side * 46, 15, side * 40, 45);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
     });
   }
 
@@ -584,6 +668,34 @@ class TungSahurCharacter {
       ctx.moveTo(-22, 10); ctx.lineTo(-24, 7);
       ctx.moveTo(22, 10); ctx.lineTo(24, 7);
       ctx.stroke();
+    } else if (this.mood === 'sick') {
+      // Shivering wobbly sickly mouth with thermometer
+      ctx.beginPath();
+      ctx.moveTo(-18, 10);
+      ctx.quadraticCurveTo(-8, 3, 0, 11);
+      ctx.quadraticCurveTo(8, 18, 18, 8);
+      ctx.strokeStyle = '#274e0d';
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Clinical Thermometer sticking out of mouth
+      ctx.save();
+      ctx.translate(6, 10);
+      ctx.rotate(0.32);
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(0, -3.5, 32, 7, 3);
+      ctx.fill();
+      ctx.stroke();
+      // Red mercury tip
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.arc(30, 0, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     } else if (this.mood === 'sad') {
       // Downturned sad frown
       ctx.beginPath();
@@ -593,16 +705,16 @@ class TungSahurCharacter {
       ctx.lineCap = 'round';
       ctx.stroke();
     } else if (this.mood === 'crying') {
-      // Big trembling crying wail
+      // Big trembling crying wail (Mengnaigs!)
       ctx.beginPath();
-      ctx.ellipse(0, 10, 18, 14, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 14, 22, 18, 0, 0, Math.PI * 2);
       ctx.fillStyle = '#26110b';
       ctx.fill();
       ctx.lineWidth = 4;
       ctx.strokeStyle = '#271404';
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(0, 16, 10, 0, Math.PI * 2);
+      ctx.arc(0, 20, 12, 0, Math.PI * 2);
       ctx.fillStyle = '#e11d48';
       ctx.fill();
     } else if (this.mood === 'angry') {
@@ -645,10 +757,14 @@ class TungSahurCharacter {
     const ctx = this.ctx;
     const r = this.baseRadius;
 
-    // Left Hand (rests on hip)
+    // Left Hand (clutches belly if sick or pooping, otherwise rests on hip)
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(-r * 0.75, 45, 16, 20, -0.2, 0, Math.PI * 2);
+    if (this.mood === 'sick' || this.mood === 'pooping') {
+      ctx.ellipse(-r * 0.28, 68, 18, 14, 0.4, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(-r * 0.75, 45, 16, 20, -0.2, 0, Math.PI * 2);
+    }
     ctx.fillStyle = '#8b5a2b';
     ctx.fill();
     ctx.strokeStyle = '#271404';
@@ -688,6 +804,25 @@ class TungSahurCharacter {
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
+    ctx.restore();
+  }
+
+  drawFeverPatch() {
+    const ctx = this.ctx;
+    // Blue cooling gel sheet (koyo demam) on forehead
+    ctx.save();
+    ctx.translate(0, -this.baseRadius * 0.78);
+    ctx.beginPath();
+    ctx.roundRect(-32, -10, 64, 20, 6);
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.9)';
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 2.5;
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DEMAM SAHUR', 0, 4);
     ctx.restore();
   }
 
@@ -793,6 +928,24 @@ class TungSahurCharacter {
         ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
         ctx.beginPath();
         ctx.arc(0, 0, 10, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'germ') {
+        ctx.fillStyle = 'rgba(132, 204, 22, 0.85)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#365314';
+        ctx.beginPath();
+        ctx.arc(-2, -1, 1.5, 0, Math.PI * 2);
+        ctx.arc(2, 2, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.type === 'sweat') {
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(0, -6);
+        ctx.quadraticCurveTo(4, 0, 4, 4);
+        ctx.arc(0, 4, 4, 0, Math.PI);
+        ctx.quadraticCurveTo(-4, 0, 0, -6);
         ctx.fill();
       } else if (p.type === 'zzz') {
         ctx.fillStyle = '#93c5fd';

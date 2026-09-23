@@ -243,6 +243,61 @@ class SoundEngine {
     osc.stop(now + 0.08);
   }
 
+  // Stomach Rumble (Perut keroncongan / mules BAB)
+  playStomachRumble() {
+    if (this.isMuted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(65, now);
+    osc.frequency.linearRampToValueAtTime(85, now + 0.2);
+    osc.frequency.linearRampToValueAtTime(55, now + 0.45);
+    osc.frequency.linearRampToValueAtTime(70, now + 0.65);
+
+    // Gurgle modulation
+    const mod = this.ctx.createOscillator();
+    const modGain = this.ctx.createGain();
+    mod.frequency.setValueAtTime(14, now);
+    modGain.gain.setValueAtTime(30, now);
+    mod.connect(osc.frequency);
+    mod.start(now);
+    mod.stop(now + 0.7);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(180, now);
+
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.7);
+  }
+
+  // Sick Groan (Merintih saat sakit / meriang)
+  playGroan() {
+    if (this.isMuted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.linearRampToValueAtTime(120, now + 0.5);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.55);
+  }
+
   // Whimper / Crying sob
   playCry() {
     if (this.isMuted || !this.ctx) return;
@@ -269,6 +324,37 @@ class SoundEngine {
     gain.connect(this.ctx.destination);
     osc.start(now);
     osc.stop(now + 0.4);
+  }
+
+  // Dramatic Mengnaigs (Nangis kejer histeris karena lapar/haus/sakit)
+  playMengnaigs() {
+    if (this.isMuted || !this.ctx) return;
+    const bursts = [0, 0.22, 0.45, 0.7];
+    bursts.forEach((time, idx) => {
+      setTimeout(() => {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        const startF = idx % 2 === 0 ? 680 : 580;
+        osc.frequency.setValueAtTime(startF, now);
+        osc.frequency.exponentialRampToValueAtTime(280, now + 0.2);
+
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(750, now);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      }, time * 1000);
+    });
   }
 
   // Angry Growl / Rage
