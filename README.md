@@ -54,8 +54,18 @@ Menggunakan **Web Audio API** prosedural untuk menghasilkan suara autentik:
 
 ---
 
+### 6. Sahabat Backrooms & Global Multiplayer (Add Friends & Bertamu) 👥🌐
+* **ID Sahabat Unik**: Setiap penjelajah Backrooms memiliki Friend Code unik (contoh: `SAHUR-8821`).
+* **Tambah Teman**: Tambahkan teman melalui kode ID mereka secara instan atau cari penjelajah rekomendasi.
+* **Mode Bertamu (Kunjungi Sahabat)**: Kunjungi bilik kamar temanmu! Kamu bisa menyuapi makan, memberi air minum, dan membelai Tungtung sahabatmu untuk mendapatkan bonus Koin Sahur.
+* **Kirim Bingkisan Takjil**: Kirim kurma dan almond water sahur ke temanmu yang akan muncul di inbox hadiah mereka.
+* **Siap Firebase Firestore Global**: Terhubung secara mulus ke Firebase Cloud Firestore untuk multiplayer global. Cek panduan lengkap di [FIREBASE_SETUP.md](file:///c:/Users/Student/Documents/ma-game/FIREBASE_SETUP.md).
+
+---
+
 ## 🚀 Cara Menjalankan
 
 Game ini murni dibuat dengan **HTML5, Vanilla JavaScript modern, dan Vanilla CSS** sehingga dapat langsung dibuka di browser apa pun:
 1. Cukup buka file `index.html` di web browser (Google Chrome, Firefox, Edge, Safari, dll.).
-2. Atau jalankan melalui web server lokal sederhana (misalnya ekstensi *Live Server* di VS Code atau `npx serve .`).
+2. Atau jalankan melalui web server lokal sederhana (misalnya ekstensi *Live Server* di VS Code atau `npx serve .` / `node server.js`).
+

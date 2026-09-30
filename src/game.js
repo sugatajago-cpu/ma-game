@@ -36,6 +36,10 @@ class TungGame {
     // Dragging item
     this.draggedItem = null;
 
+    // Friends & Visiting state
+    this.isVisiting = false;
+    this.visitingFriend = null;
+
     // Initialize references
     this.initDOM();
     this.loadState();
@@ -45,6 +49,11 @@ class TungGame {
     this.updateRoomView();
     this.renderShelf();
     this.updateHUD();
+
+    // Initialize Friends & Multiplayer Manager
+    if (window.friendManager) {
+      window.friendManager.init(this);
+    }
 
     // Start game loop
     this.loop = this.loop.bind(this);
@@ -139,6 +148,12 @@ class TungGame {
     // Pet Tungtung directly when in stage
     this.characterCanvas.addEventListener('click', (e) => {
       if (this.isDead || this.isSleeping || this.isAttacking) return;
+      if (this.isVisiting && this.visitingFriend) {
+        if (window.friendManager) {
+          window.friendManager.interactVisitingFriend('pet');
+        }
+        return;
+      }
       this.showSpeech('TUNG! TUNG! TUNG! SAHURRR!', 1800);
       this.stats.sanity = Math.min(100, this.stats.sanity + 2);
       this.updateHUD();
@@ -199,6 +214,9 @@ class TungGame {
 
   switchRoom(room) {
     if (this.isAttacking) return;
+    if (this.isVisiting && window.friendManager) {
+      window.friendManager.leaveFriendRoom();
+    }
     this.currentRoom = room;
 
     // Update active nav button
@@ -553,6 +571,10 @@ class TungGame {
   }
 
   evaluateMood() {
+    if (this.isVisiting && this.visitingFriend) {
+      this.character.setMood(this.visitingFriend.mood || 'happy');
+      return;
+    }
     if (this.isDead) {
       this.character.setMood('dead');
       return;
@@ -904,6 +926,9 @@ class TungGame {
     };
     try {
       localStorage.setItem('tung_sahur_save', JSON.stringify(data));
+      if (window.friendManager) {
+        window.friendManager.syncMyLiveStats();
+      }
     } catch (e) {
       console.warn('Storage error:', e);
     }

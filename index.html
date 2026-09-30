@@ -34,6 +34,10 @@
             <span>🪙</span>
             <span id="coin-count">60</span>
           </div>
+          <button id="btn-friends-toggle" class="icon-btn btn-friends-accent" title="Teman & Sahabat Backrooms">
+            <span>👥 Sahabat</span>
+            <span id="friends-badge" class="badge-count">3</span>
+          </button>
           <button id="btn-audio-toggle" class="icon-btn" title="Toggle Suara">🔊 Audio</button>
           <button id="btn-crt-toggle" class="icon-btn" title="Toggle CRT Filter">📺 CRT</button>
         </div>
@@ -92,6 +96,16 @@
     <main id="game-stage">
       <!-- Speech & Sahur Shout Bubble -->
       <div id="speech-bubble">TUNG! TUNG! TUNG! SAHURRR!</div>
+
+      <!-- Visiting Friend Mode Banner -->
+      <div id="visiting-banner" class="visiting-banner" style="display: none;">
+        <div class="visiting-info">
+          <span class="visiting-pulse">●</span>
+          <span>Bertamu di Bilik: <b id="visiting-friend-name">Kang Subuh</b></span>
+          <span class="visiting-pet-badge" id="visiting-pet-tag">Tungtung Sahur</span>
+        </div>
+        <button id="btn-leave-friend-room" class="btn-leave-room">🏠 Pulang ke Kamar</button>
+      </div>
 
       <!-- Bedroom Pull Cord Light Switch -->
       <div id="bedroom-lamp-cord" class="bedroom-lamp-cord" title="Tarik tali untuk matikan/hidupkan lampu kamar tidur">
@@ -190,6 +204,167 @@
       </div>
     </div>
 
+    <!-- MODAL 4: SAHABAT & GLOBAL MULTIPLAYER (FRIENDS SYSTEM) -->
+    <div id="modal-friends" class="modal-overlay">
+      <div class="modal-card modal-friends-card">
+        <!-- Friends Modal Header -->
+        <div class="friends-header">
+          <div class="friends-title-box">
+            <span class="friends-icon">👥</span>
+            <div>
+              <h2 class="modal-title" style="margin: 0; font-size: 1.5rem; text-align: left;">SAHABAT BACKROOMS</h2>
+              <p class="friends-subtitle">Jelajahi Level 0 bersama penjelajah lain & hubungkan ke Firebase!</p>
+            </div>
+          </div>
+          <button id="btn-close-friends" class="close-modal-btn" title="Tutup Modal">&times;</button>
+        </div>
+
+        <!-- Notification Banner / Toast for Friend Actions -->
+        <div id="friend-alert-box" class="friend-alert-box" style="display: none;"></div>
+
+        <!-- Navigation Tabs -->
+        <div class="friends-tab-nav">
+          <button class="friend-tab-btn active" data-tab="tab-friend-list">
+            <span>📜 Sahabat</span>
+            <span id="tab-friend-count-badge" class="tab-badge">3</span>
+          </button>
+          <button class="friend-tab-btn" data-tab="tab-add-friend">
+            <span>➕ Tambah Teman</span>
+          </button>
+          <button class="friend-tab-btn" data-tab="tab-my-profile">
+            <span>👤 ID & Profil</span>
+          </button>
+          <button class="friend-tab-btn" data-tab="tab-firebase-sync">
+            <span>🔥 Firebase Global</span>
+            <span class="firebase-status-dot offline" id="firebase-status-indicator" title="Mode Offline/Firebase"></span>
+          </button>
+        </div>
+
+        <!-- TAB 1: DAFTAR TEMAN -->
+        <div id="tab-friend-list" class="friend-tab-content active">
+          <!-- Pending Gifts Bar -->
+          <div id="pending-gifts-bar" class="pending-gifts-box" style="display: none;">
+            <div class="gift-text">
+              <span>🎁</span>
+              <span id="gift-message-text">Ada takjil sahur masuk dari sahabatmu!</span>
+            </div>
+            <button id="btn-claim-gifts" class="claim-gift-btn">Ambil Semua Takjil ✨</button>
+          </div>
+
+          <div class="friend-search-bar">
+            <input type="text" id="friend-search-input" placeholder="🔍 Cari nama atau ID sahabat...">
+          </div>
+
+          <div id="friends-list-container" class="friends-list-scroll">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- TAB 2: TAMBAH TEMAN -->
+        <div id="tab-add-friend" class="friend-tab-content">
+          <div class="add-friend-box">
+            <label for="input-friend-code" class="input-label">Masukkan ID Sahabat (Friend Code):</label>
+            <div class="input-with-button">
+              <input type="text" id="input-friend-code" placeholder="Cth: SAHUR-8821 atau username..." maxlength="24">
+              <button id="btn-submit-add-friend" class="action-btn-primary">Tambah Sahabat</button>
+            </div>
+            <p class="input-hint">💡 Bagikan ID Sahabatmu ke teman atau coba tambahkan penjelajah Backrooms di bawah!</p>
+          </div>
+
+          <!-- Suggested Wanderers to Discover -->
+          <div class="discover-section">
+            <div class="section-title">
+              <span>🧭 Penjelajah Backrooms yang Sedang Mengembara</span>
+              <button id="btn-refresh-discover" class="btn-link" title="Segarkan Saran">🔄 Acak</button>
+            </div>
+            <div id="discover-list-container" class="discover-grid">
+              <!-- Render discover cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PROFIL SAYA & ID -->
+        <div id="tab-my-profile" class="friend-tab-content">
+          <div class="profile-card-display">
+            <div class="profile-code-display">
+              <span class="code-label">ID SAHABAT SAYA (SHARE KE TEMAN):</span>
+              <div class="code-value-row">
+                <span id="my-friend-code-val" class="my-friend-code-text">SAHUR-XXXX</span>
+                <button id="btn-copy-friend-code" class="copy-code-btn" title="Salin Kode Sahabat">📋 Salin</button>
+              </div>
+              <span id="copy-feedback-text" class="copy-feedback">Tersalin ke clipboard!</span>
+            </div>
+
+            <div class="profile-inputs-grid">
+              <div class="profile-input-group">
+                <label>Nama Penjelajah (Kamu):</label>
+                <input type="text" id="my-profile-name-input" maxlength="20" placeholder="Nama Penjelajah...">
+              </div>
+              <div class="profile-input-group">
+                <label>Nama Tungtung Sahurmu:</label>
+                <input type="text" id="my-pet-name-input" maxlength="20" placeholder="Nama Peliharaan...">
+              </div>
+            </div>
+
+            <!-- Pet Live Status Summary -->
+            <div class="pet-status-summary-box">
+              <div class="summary-header">📊 Status Tungtung Sahurmu Saat Ini:</div>
+              <div class="summary-chips">
+                <span class="status-chip" id="chip-mood">Emosi: Gembira 😊</span>
+                <span class="status-chip" id="chip-hunger">🍗 Lapar: 80%</span>
+                <span class="status-chip" id="chip-thirst">💧 Haus: 75%</span>
+                <span class="status-chip" id="chip-hygiene">🧼 Bersih: 90%</span>
+                <span class="status-chip" id="chip-days">Hari Bertahan: Hari 1 🚪</span>
+              </div>
+            </div>
+
+            <button id="btn-save-profile" class="action-btn-primary" style="margin-top: 14px;">💾 Simpan Profil</button>
+          </div>
+        </div>
+
+        <!-- TAB 4: FIREBASE SYNC & GLOBAL CONNECTION -->
+        <div id="tab-firebase-sync" class="friend-tab-content">
+          <div class="firebase-guide-box">
+            <div class="firebase-badge-row">
+              <span class="fire-icon">🔥</span>
+              <div>
+                <h3 style="color: #f59e0b; margin: 0; font-size: 1.15rem;">Koneksi Firebase Firestore Global</h3>
+                <p style="font-size: 0.85rem; color: #d1d5db; margin: 2px 0 0 0;">
+                  Sinkronkan teman dan status Tungtung secara global ke seluruh dunia dengan akun Firebase-mu!
+                </p>
+              </div>
+            </div>
+
+            <div class="firebase-status-banner" id="firebase-connection-status-box">
+              <span class="status-indicator-icon" id="fb-status-icon">⚪</span>
+              <span id="fb-status-text">Status: <b>Mode Local Storage (Offline & Siap Dihubungkan)</b></span>
+            </div>
+
+            <div class="firebase-config-input-area">
+              <label class="input-label">Tempel Firebase Configuration (JSON Object):</label>
+              <textarea id="firebase-config-json" rows="5" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "game-backrooms.firebaseapp.com",\n  "projectId": "game-backrooms",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'></textarea>
+              <div class="firebase-btn-row">
+                <button id="btn-save-firebase-config" class="action-btn-primary">🔥 Sambungkan ke Firebase</button>
+                <button id="btn-reset-firebase" class="action-btn-secondary">Reset ke Local</button>
+              </div>
+            </div>
+
+            <div class="firebase-instructions-accordion">
+              <details open>
+                <summary><b>📖 Cara Mendapatkan Firebase Config Gratis (3 Langkah Cepat):</b></summary>
+                <ol style="margin-top: 8px; padding-left: 20px; font-size: 0.85rem; line-height: 1.6; color: #fef08a;">
+                  <li>Buka <b><a href="https://console.firebase.google.com" target="_blank" style="color:#fde047;">console.firebase.google.com</a></b> dan buat Project baru (contoh: <code>tungtung-sahur</code>).</li>
+                  <li>Di menu kiri, pilih <b>Firestore Database</b> &gt; Klik <b>Create Database</b> (pilih Start in test mode).</li>
+                  <li>Buka <b>Project Settings (⚙️)</b> &gt; Bagian <i>Your apps</i> &gt; Pilih ikon Web (<b>&lt;/&gt;</b>) &gt; Copy objek <code>firebaseConfig</code> dan tempel ke kotak di atas!</li>
+                </ol>
+              </details>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <!-- Scripts -->
@@ -197,6 +372,7 @@
   <script src="src/items.js"></script>
   <script src="src/character.js"></script>
   <script src="src/minigame.js"></script>
+  <script src="src/friends.js"></script>
   <script src="src/game.js"></script>
 </body>
 </html>
