@@ -22,6 +22,7 @@ class TungGame {
     this.isAttacking = false;
     this.isSick = false;
     this.poopList = []; // { id, room, x, y }
+    this.highScore = 0;
 
     // Timers
     this.lastTickTime = performance.now();
@@ -55,6 +56,11 @@ class TungGame {
       window.friendManager.init(this);
     }
 
+    // Attempt cloud load from Firebase after initialization
+    setTimeout(() => {
+      this.loadCloudState();
+    }, 600);
+
     // Start game loop
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
@@ -72,6 +78,12 @@ class TungGame {
     this.poopContainer = document.getElementById('poop-layer');
     this.shelfTray = document.getElementById('items-tray');
     this.dragGhost = document.getElementById('drag-ghost');
+
+    // Cloud sync HUD elements
+    this.cloudSyncBtn = document.getElementById('btn-cloud-sync');
+    this.cloudSyncIcon = document.getElementById('cloud-sync-icon');
+    this.cloudSyncLabel = document.getElementById('cloud-sync-label');
+    this.cloudSyncDot = document.getElementById('cloud-sync-dot');
 
     // Gauge fills
     this.gaugeHunger = document.getElementById('gauge-hunger');
@@ -128,6 +140,21 @@ class TungGame {
       const isMuted = window.soundEngine.toggleMute();
       this.audioToggleBtn.textContent = isMuted ? '🔇 Muted' : '🔊 Sound';
     });
+
+    // Cloud Sync Button
+    if (this.cloudSyncBtn) {
+      this.cloudSyncBtn.addEventListener('click', () => {
+        this.saveState(true);
+        this.showSpeech('Data disimpan langsung ke Firebase Cloud! ☁️✨', 2200);
+        if (window.soundEngine) window.soundEngine.playCoin();
+      });
+    }
+
+    if (window.firebaseService) {
+      window.firebaseService.onStatusChange((status) => {
+        this.updateCloudStatusUI(status);
+      });
+    }
 
     // CRT Toggle
     this.crtToggleBtn.addEventListener('click', () => {
@@ -762,8 +789,22 @@ class TungGame {
     this.minigame = new BackroomsMiniGame(container, (result) => {
       this.stats.coins += result.coins;
       this.stats.sanity = Math.min(100, this.stats.sanity + 20);
+      this.highScore = Math.max(this.highScore || 0, result.score);
       this.updateHUD();
-      alert(`Permainan Selesai!\nSkor: ${result.score} m\nKoin Sahur Didapat: +${result.coins}`);
+
+      // Submit high score to Firebase Leaderboard
+      if (window.firebaseService && window.friendManager && window.friendManager.myProfile) {
+        window.firebaseService.submitLeaderboardScore(
+          window.friendManager.myProfile.id,
+          window.friendManager.myProfile.name,
+          window.friendManager.myProfile.petName,
+          result.score,
+          result.coins
+        );
+      }
+      this.saveState(true);
+
+      alert(`Permainan Selesai!\nSkor: ${result.score} m (Rekor Terbaik: ${this.highScore} m)\nKoin Sahur Didapat: +${result.coins}\nData permainan tersimpan ke Firebase Cloud! 🔥`);
       this.closeArcade();
     });
 
@@ -917,17 +958,42 @@ class TungGame {
     requestAnimationFrame(this.loop);
   }
 
-  saveState() {
+  saveState(immediate = false) {
     const data = {
       stats: this.stats,
       poopList: this.poopList,
       isDead: this.isDead,
-      isSick: this.isSick
+      isSick: this.isSick,
+      isSleeping: this.isSleeping,
+      currentRoom: this.currentRoom,
+      highScore: this.highScore || 0,
+      savedAt: Date.now()
     };
+
     try {
       localStorage.setItem('tung_sahur_save', JSON.stringify(data));
       if (window.friendManager) {
         window.friendManager.syncMyLiveStats();
+      }
+
+      // Synchronize full game state to Firebase Cloud Firestore
+      if (window.firebaseService && window.friendManager && window.friendManager.myProfile && window.friendManager.myProfile.id) {
+        window.firebaseService.saveAllPlayerData(
+          window.friendManager.myProfile.id,
+          {
+            stats: this.stats,
+            poopList: this.poopList,
+            isDead: this.isDead,
+            isSick: this.isSick,
+            isSleeping: this.isSleeping,
+            currentRoom: this.currentRoom,
+            highScore: this.highScore || 0,
+            mood: this.character ? this.character.mood : 'happy',
+            profile: window.friendManager.myProfile,
+            friends: window.friendManager.friends
+          },
+          immediate
+        );
       }
     } catch (e) {
       console.warn('Storage error:', e);
@@ -943,9 +1009,73 @@ class TungGame {
         if (parsed.poopList) this.poopList = parsed.poopList;
         if (parsed.isDead !== undefined) this.isDead = parsed.isDead;
         if (parsed.isSick !== undefined) this.isSick = parsed.isSick;
+        if (parsed.isSleeping !== undefined) this.isSleeping = parsed.isSleeping;
+        if (parsed.currentRoom) this.currentRoom = parsed.currentRoom;
+        if (parsed.highScore) this.highScore = parsed.highScore;
       }
     } catch (e) {
       console.warn('Load error:', e);
+    }
+  }
+
+  async loadCloudState() {
+    if (!window.firebaseService || !window.friendManager || !window.friendManager.myProfile || !window.friendManager.myProfile.id) return;
+    try {
+      const playerId = window.friendManager.myProfile.id;
+      const cloudData = await window.firebaseService.loadPlayerData(playerId);
+      if (cloudData) {
+        let hasChanges = false;
+        if (cloudData.stats) {
+          this.stats = Object.assign(this.stats, cloudData.stats);
+          hasChanges = true;
+        }
+        if (cloudData.poopList && Array.isArray(cloudData.poopList)) {
+          this.poopList = cloudData.poopList;
+          hasChanges = true;
+        }
+        if (cloudData.isDead !== undefined) {
+          this.isDead = cloudData.isDead;
+          hasChanges = true;
+        }
+        if (cloudData.isSick !== undefined) {
+          this.isSick = cloudData.isSick;
+          hasChanges = true;
+        }
+        if (cloudData.isSleeping !== undefined) {
+          this.isSleeping = cloudData.isSleeping;
+          hasChanges = true;
+        }
+        if (cloudData.highScore) {
+          this.highScore = cloudData.highScore;
+        }
+
+        if (hasChanges) {
+          this.updateHUD();
+          this.evaluateMood();
+          this.renderPoops();
+          this.showSpeech('Data Tungtung disinkronkan dari Firebase Global! ☁️✨', 2500);
+        }
+      }
+    } catch (err) {
+      console.warn('Cloud state load error:', err);
+    }
+  }
+
+  updateCloudStatusUI(status) {
+    if (!this.cloudSyncDot || !this.cloudSyncIcon) return;
+
+    if (status.syncStatus === 'syncing') {
+      this.cloudSyncIcon.innerHTML = '<span class="spin-icon">🔄</span>';
+      if (this.cloudSyncLabel) this.cloudSyncLabel.textContent = 'Simpan...';
+      this.cloudSyncDot.className = 'sync-dot-syncing';
+    } else if (status.syncStatus === 'synced' && status.isOnline) {
+      this.cloudSyncIcon.textContent = '☁️';
+      if (this.cloudSyncLabel) this.cloudSyncLabel.textContent = 'Cloud';
+      this.cloudSyncDot.className = 'sync-dot-online';
+    } else {
+      this.cloudSyncIcon.textContent = '☁️';
+      if (this.cloudSyncLabel) this.cloudSyncLabel.textContent = 'Offline';
+      this.cloudSyncDot.className = 'sync-dot-offline';
     }
   }
 }

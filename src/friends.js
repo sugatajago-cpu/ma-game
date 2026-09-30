@@ -232,40 +232,29 @@ class FriendManager {
     }
 
     // Check if Firebase is active
-    if (this.isFirebaseActive && this.firestoreDb) {
+    if (window.firebaseService && window.firebaseService.isInitialized) {
       try {
         this.showAlert('Mencari sahabat di Firebase Firestore...', 'info');
-        const userDoc = await this.firestoreDb.collection('tung_players').doc(code).get();
+        const userDoc = await window.firebaseService.searchPlayer(code);
 
-        if (userDoc.exists) {
-          const data = userDoc.data();
+        if (userDoc) {
           const newFriend = {
             id: code,
-            name: data.name || `Penjelajah ${code}`,
-            petName: data.petName || 'Tungtung',
-            status: data.status || 'Online • Di Backrooms',
-            mood: data.mood || 'happy',
-            stats: data.stats || { hunger: 80, thirst: 80, hygiene: 80, energy: 80, sanity: 80 },
+            name: userDoc.name || `Penjelajah ${code}`,
+            petName: userDoc.petName || 'Tungtung',
+            status: userDoc.status || 'Online • Di Backrooms',
+            mood: userDoc.mood || 'happy',
+            stats: userDoc.stats || { hunger: 80, thirst: 80, hygiene: 80, energy: 80, sanity: 80 },
             lastSeen: 'Baru saja',
             isOnline: true
           };
 
           this.friends.unshift(newFriend);
           this.saveFriendsData();
-
-          // Also save in user's friends subcollection in Firestore
-          await this.firestoreDb
-            .collection('tung_players')
-            .doc(this.myProfile.id)
-            .collection('friends')
-            .doc(code)
-            .set({
-              friendId: code,
-              addedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+          if (this.game) this.game.saveState();
 
           this.renderFriendsList();
-          this.showAlert(`Berhasil menambahkan ${newFriend.name} dari Firebase!`, 'success');
+          this.showAlert(`Berhasil menambahkan ${newFriend.name} dari Firebase Global!`, 'success');
           if (window.soundEngine) window.soundEngine.playCoin();
           return true;
         } else {
@@ -360,27 +349,21 @@ class FriendManager {
     ];
     const chosenGift = giftTypes[Math.floor(Math.random() * giftTypes.length)];
 
-    if (this.isFirebaseActive && this.firestoreDb) {
-      try {
-        await this.firestoreDb
-          .collection('tung_players')
-          .doc(friendId)
-          .collection('gifts')
-          .add({
-            fromName: this.myProfile.name,
-            fromId: this.myProfile.id,
-            item: chosenGift.name,
-            coins: chosenGift.coins,
-            hunger: chosenGift.hunger,
-            thirst: chosenGift.thirst,
-            sentAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-
-        this.showAlert(`Berhasil mengirim ${chosenGift.name} ke ${friend.name} lewat Firebase!`, 'success');
-      } catch (err) {
-        console.error('Firebase send gift error:', err);
-        this.showAlert(`Gagal kirim via Firebase, hadiah terkirim lokal!`, 'warning');
-      }
+    if (window.firebaseService && window.firebaseService.isInitialized) {
+      window.firebaseService.sendGift(friendId, {
+        fromName: this.myProfile.name,
+        fromId: this.myProfile.id,
+        item: chosenGift.name,
+        coins: chosenGift.coins,
+        hunger: chosenGift.hunger,
+        thirst: chosenGift.thirst
+      }).then(ok => {
+        if (ok) {
+          this.showAlert(`Berhasil mengirim ${chosenGift.name} ke ${friend.name} lewat Firebase Cloud! 🔥`, 'success');
+        } else {
+          this.showAlert(`Hadiah terkirim secara lokal ke ${friend.name}!`, 'info');
+        }
+      });
     } else {
       this.showAlert(`Berhasil mengirim bingkisan ${chosenGift.name} ke ${friend.name}!`, 'success');
     }
@@ -410,23 +393,16 @@ class FriendManager {
       this.game.stats.sanity = Math.min(100, this.game.stats.sanity + 15);
       this.game.updateHUD();
       this.game.showSpeech(`Menerima kiriman Takjil Sahur dari sahabat! (+${totalCoins} Koin)`, 2500);
+      this.game.saveState(true);
     }
 
     const count = this.pendingGifts.length;
     this.pendingGifts = [];
     this.saveFriendsData();
 
-    if (this.isFirebaseActive && this.firestoreDb) {
-      // Clear claimed gifts in Firestore
-      this.firestoreDb
-        .collection('tung_players')
-        .doc(this.myProfile.id)
-        .collection('gifts')
-        .get()
-        .then(snapshot => {
-          snapshot.forEach(doc => doc.ref.delete());
-        })
-        .catch(e => console.warn('Error clearing gifts in Firestore:', e));
+    if (window.firebaseService && window.firebaseService.isInitialized) {
+      // Clear claimed gifts in Firestore subcollection
+      window.firebaseService.clearGifts(this.myProfile.id);
     }
 
     this.renderFriendsList();
@@ -582,20 +558,36 @@ class FriendManager {
 
     this.game.updateHUD();
     this.saveFriendsData();
+
+    // Push friend's updated pet stats to Firebase Cloud
+    if (window.firebaseService && window.firebaseService.isInitialized) {
+      window.firebaseService.interactWithFriendPet(friend.id, type);
+    }
   }
 
   // ----------------------------------------------------
   // FIREBASE INITIALIZATION & SYNC
   // ----------------------------------------------------
   loadFirebaseConfig() {
-    try {
-      const savedConfig = localStorage.getItem(this.fbConfigKey);
-      if (savedConfig) {
-        this.firebaseConfig = JSON.parse(savedConfig);
-        this.initFirebase(this.firebaseConfig);
+    // firebaseService already auto-reads saved config on init.
+    // Sync our local state to reflect firebaseService status.
+    if (window.firebaseService && window.firebaseService.isInitialized) {
+      this.isFirebaseActive = true;
+      this.firestoreDb = window.firebaseService.db;
+      this.firebaseConfig = window.firebaseService.config;
+      // Set up real-time gift listener via firebaseService
+      this.setupFirebaseListeners();
+    } else {
+      // Fallback: try loading from localStorage
+      try {
+        const savedConfig = localStorage.getItem(this.fbConfigKey);
+        if (savedConfig) {
+          this.firebaseConfig = JSON.parse(savedConfig);
+          // initFirebase will be called lazily when needed
+        }
+      } catch (e) {
+        console.warn('Error loading Firebase config:', e);
       }
-    } catch (e) {
-      console.warn('Error loading Firebase config:', e);
     }
   }
 
@@ -681,43 +673,37 @@ class FriendManager {
   }
 
   setupFirebaseListeners() {
-    if (!this.isFirebaseActive || !this.firestoreDb) return;
+    if (!window.firebaseService || !window.firebaseService.isInitialized) return;
+    if (!this.myProfile || !this.myProfile.id) return;
 
-    try {
-      // Real-time listener for incoming gifts
-      this.unsubscribeGifts = this.firestoreDb
-        .collection('tung_players')
-        .doc(this.myProfile.id)
-        .collection('gifts')
-        .onSnapshot((snapshot) => {
-          let hasNewGifts = false;
-          snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added') {
-              const data = change.doc.data();
-              this.pendingGifts.unshift({
-                id: change.doc.id,
-                fromName: data.fromName || 'Sahabat Backrooms',
-                fromId: data.fromId || 'UNKNOWN',
-                item: data.item || 'Takjil Sahur',
-                coins: data.coins || 15,
-                hunger: data.hunger || 20,
-                thirst: data.thirst || 20,
-                time: 'Baru saja'
-              });
-              hasNewGifts = true;
-            }
-          });
-
-          if (hasNewGifts) {
-            this.saveFriendsData();
-            this.renderFriendsList();
-            this.updateBadge();
-            if (window.soundEngine) window.soundEngine.playCoin();
-          }
-        });
-    } catch (err) {
-      console.warn('Firebase gifts listener error:', err);
+    // Use central firebaseService for real-time gift listener
+    if (this.unsubscribeGifts) {
+      this.unsubscribeGifts();
+      this.unsubscribeGifts = null;
     }
+
+    this.unsubscribeGifts = window.firebaseService.listenToIncomingGifts(
+      this.myProfile.id,
+      (giftData) => {
+        const alreadyExists = this.pendingGifts.some(g => g.id === giftData.id);
+        if (!alreadyExists) {
+          this.pendingGifts.unshift({
+            id: giftData.id,
+            fromName: giftData.fromName || 'Sahabat Backrooms',
+            fromId: giftData.fromId || 'UNKNOWN',
+            item: giftData.item || 'Takjil Sahur',
+            coins: giftData.coins || 15,
+            hunger: giftData.hunger || 20,
+            thirst: giftData.thirst || 20,
+            time: 'Baru saja'
+          });
+          this.saveFriendsData();
+          this.renderFriendsList();
+          this.updateBadge();
+          if (window.soundEngine) window.soundEngine.playCoin();
+        }
+      }
+    );
   }
 
   syncMyLiveStats() {
@@ -744,22 +730,15 @@ class FriendManager {
       lastSeenDate: new Date().toISOString()
     };
 
-    if (this.isFirebaseActive && this.firestoreDb) {
-      try {
-        this.firestoreDb
-          .collection('tung_players')
-          .doc(this.myProfile.id)
-          .set(
-            {
-              ...myCurrentData,
-              lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            },
-            { merge: true }
-          )
-          .catch(e => console.warn('Firestore sync error:', e));
-      } catch (err) {
-        console.warn('Error pushing profile to Firestore:', err);
-      }
+    // Sync is handled by game.saveState() → firebaseService.saveAllPlayerData()
+    // But still sync profile if game is not yet available
+    if (!this.game && window.firebaseService && window.firebaseService.isInitialized) {
+      window.firebaseService.saveAllPlayerData(this.myProfile.id, {
+        profile: this.myProfile,
+        stats: myCurrentData.stats,
+        mood: myCurrentData.mood,
+        friends: this.friends
+      });
     }
   }
 
@@ -809,6 +788,10 @@ class FriendManager {
     this.fbConfigTextarea = document.getElementById('firebase-config-json');
     this.fbSaveBtn = document.getElementById('btn-save-firebase-config');
     this.fbResetBtn = document.getElementById('btn-reset-firebase');
+    this.fbForceSaveBtn = document.getElementById('btn-force-cloud-save');
+    this.fbForceLoadBtn = document.getElementById('btn-force-cloud-load');
+    this.fbRestoreIdInput = document.getElementById('input-restore-id');
+    this.fbRestoreBtn = document.getElementById('btn-restore-account');
 
     // Visiting room banner
     this.leaveRoomBtn = document.getElementById('btn-leave-friend-room');
@@ -905,6 +888,81 @@ class FriendManager {
     if (this.fbResetBtn) {
       this.fbResetBtn.addEventListener('click', () => {
         this.resetFirebaseConfig();
+      });
+    }
+
+    // Force Save to Cloud
+    if (this.fbForceSaveBtn) {
+      this.fbForceSaveBtn.addEventListener('click', () => {
+        if (this.game) {
+          this.game.saveState(true);
+          this.showAlert('💾 Data Tungtung tersimpan langsung ke Firebase Cloud! ☁️', 'success');
+        } else {
+          this.showAlert('Game belum siap, coba lagi sebentar!', 'warning');
+        }
+      });
+    }
+
+    // Force Load from Cloud
+    if (this.fbForceLoadBtn) {
+      this.fbForceLoadBtn.addEventListener('click', async () => {
+        if (this.game) {
+          this.showAlert('📥 Memuat data dari Firebase Cloud...', 'info');
+          await this.game.loadCloudState();
+          this.renderFirebaseTab();
+        } else {
+          this.showAlert('Game belum siap, coba lagi!', 'warning');
+        }
+      });
+    }
+
+    // Restore / Switch Account by ID
+    if (this.fbRestoreBtn) {
+      this.fbRestoreBtn.addEventListener('click', async () => {
+        const restoreId = this.fbRestoreIdInput ? this.fbRestoreIdInput.value.trim().toUpperCase() : '';
+        if (!restoreId) {
+          this.showAlert('Masukkan ID Sahabat yang ingin dipulihkan!', 'error');
+          return;
+        }
+
+        if (!window.firebaseService || !window.firebaseService.isInitialized) {
+          this.showAlert('Firebase belum terhubung untuk memulihkan akun!', 'error');
+          return;
+        }
+
+        this.showAlert(`🔍 Mencari data akun ${restoreId} di Firebase...`, 'info');
+        const cloudData = await window.firebaseService.loadPlayerData(restoreId);
+
+        if (cloudData) {
+          // Switch current profile to the found account
+          this.myProfile.id = restoreId;
+          if (cloudData.name) this.myProfile.name = cloudData.name;
+          if (cloudData.petName) this.myProfile.petName = cloudData.petName;
+          if (cloudData.createdAt) this.myProfile.createdAt = cloudData.createdAt;
+          this.saveProfile();
+
+          // Restore game state
+          if (this.game && cloudData.stats) {
+            this.game.stats = Object.assign(this.game.stats, cloudData.stats);
+            if (cloudData.poopList) this.game.poopList = cloudData.poopList;
+            if (cloudData.isDead !== undefined) this.game.isDead = cloudData.isDead;
+            if (cloudData.isSick !== undefined) this.game.isSick = cloudData.isSick;
+            if (cloudData.highScore) this.game.highScore = cloudData.highScore;
+            this.game.updateHUD();
+            this.game.evaluateMood();
+            this.game.renderPoops();
+          }
+
+          // Re-setup gift listener for the new ID
+          this.setupFirebaseListeners();
+          this.renderProfileTab();
+          this.renderFirebaseTab();
+
+          this.showAlert(`✅ Data akun ${restoreId} berhasil dipulihkan!`, 'success');
+          if (this.game) this.game.showSpeech(`Selamat datang kembali, ${this.myProfile.name}! ☁️`, 3000);
+        } else {
+          this.showAlert(`ID ${restoreId} tidak ditemukan di Firebase Cloud.`, 'error');
+        }
       });
     }
 
@@ -1141,22 +1199,36 @@ class FriendManager {
   }
 
   renderFirebaseTab() {
+    const svcStatus = window.firebaseService ? window.firebaseService.getStatus() : null;
+    const isConnected = svcStatus ? svcStatus.isInitialized : this.isFirebaseActive;
+    const projectId = svcStatus && svcStatus.projectId
+      ? svcStatus.projectId
+      : (this.firebaseConfig ? this.firebaseConfig.projectId : 'N/A');
+    const lastSync = svcStatus && svcStatus.lastSyncedAt
+      ? svcStatus.lastSyncedAt.toLocaleTimeString('id-ID')
+      : null;
+
     if (this.fbStatusIndicator) {
-      this.fbStatusIndicator.className = `firebase-status-dot ${this.isFirebaseActive ? 'online' : 'offline'}`;
+      this.fbStatusIndicator.className = `firebase-status-dot ${isConnected ? 'online' : 'offline'}`;
     }
 
     if (this.fbStatusIcon && this.fbStatusText) {
-      if (this.isFirebaseActive) {
+      if (isConnected) {
         this.fbStatusIcon.textContent = '🟢';
-        this.fbStatusText.innerHTML = `Status: <b style="color:#22c55e;">Terhubung ke Firebase Global (Project: ${this.firebaseConfig ? this.firebaseConfig.projectId : 'Aktif'})</b>`;
+        const syncInfo = lastSync ? ` — Sync terakhir: <span style="color:#86efac;">${lastSync}</span>` : '';
+        this.fbStatusText.innerHTML = `Status: <b style="color:#22c55e;">Terhubung ke Firebase Cloud (${projectId})${syncInfo}</b>`;
       } else {
-        this.fbStatusIcon.textContent = '⚪';
-        this.fbStatusText.innerHTML = `Status: <b style="color:#ca8a04;">Mode Local Storage (Offline & Siap Dihubungkan)</b>`;
+        this.fbStatusIcon.textContent = '🔴';
+        this.fbStatusText.innerHTML = `Status: <b style="color:#f87171;">Terputus — Tidak ada koneksi internet atau Firebase error</b>`;
       }
     }
 
-    if (this.fbConfigTextarea && this.firebaseConfig) {
-      this.fbConfigTextarea.value = JSON.stringify(this.firebaseConfig, null, 2);
+    const cfgToShow = svcStatus && svcStatus.isInitialized && window.firebaseService.config
+      ? window.firebaseService.config
+      : this.firebaseConfig;
+
+    if (this.fbConfigTextarea && cfgToShow) {
+      this.fbConfigTextarea.value = JSON.stringify(cfgToShow, null, 2);
     }
   }
 
@@ -1231,3 +1303,16 @@ class FriendManager {
 
 // Global instance
 window.friendManager = new FriendManager();
+
+// If firebaseService is already initialized when this script loads, wire listeners now
+if (window.firebaseService && window.firebaseService.isInitialized) {
+  // Set up real-time gift listener immediately
+  setTimeout(() => {
+    if (window.friendManager && window.friendManager.myProfile && window.friendManager.myProfile.id) {
+      window.friendManager.isFirebaseActive = true;
+      window.friendManager.firestoreDb = window.firebaseService.db;
+      window.friendManager.firebaseConfig = window.firebaseService.config;
+      window.friendManager.setupFirebaseListeners();
+    }
+  }, 200);
+}

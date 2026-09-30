@@ -747,6 +747,73 @@ body {
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
 }
 
+/* Cloud Sync Button in HUD */
+.btn-cloud-accent {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(56, 189, 248, 0.35)) !important;
+  border-color: #38bdf8 !important;
+  color: #e0f2fe !important;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-cloud-accent:hover {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.4), rgba(56, 189, 248, 0.5)) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+.sync-dot-online, .sync-dot.online {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+}
+
+.sync-dot-syncing, .sync-dot.syncing {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  display: inline-block;
+  animation: pulseDot 0.6s infinite alternate;
+}
+
+.sync-dot-offline, .sync-dot.offline {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #71717a;
+  display: inline-block;
+}
+
+.spin-icon {
+  display: inline-block;
+  animation: spinIcon 1s linear infinite;
+}
+
+@keyframes spinIcon {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.firebase-quick-actions-grid {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.restore-account-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
 .badge-count {
   background: #ef4444;
   color: #fff;

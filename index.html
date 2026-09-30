@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tungtungtung Sahur in The Backrooms - Virtual Pet Game</title>
-  <meta name="description" content="Rawat entitas misterius Tungtungtung Sahur di dimensi Backrooms Level 0. Beri makan, minum, bersihkan kotorannya, jangan sampai dia marah dan memukuli layarmu atau meninggal!">
+  <meta name="description"
+    content="Rawat entitas misterius Tungtungtung Sahur di dimensi Backrooms Level 0. Beri makan, minum, bersihkan kotorannya, jangan sampai dia marah dan memukuli layarmu atau meninggal!">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- Main Game Container -->
@@ -34,6 +37,12 @@
             <span>🪙</span>
             <span id="coin-count">60</span>
           </div>
+          <button id="btn-cloud-sync" class="icon-btn btn-cloud-accent"
+            title="Firebase Global Cloud (best-game-cfbfe) - Klik untuk Sinkronisasi">
+            <span id="cloud-sync-icon">☁️</span>
+            <span id="cloud-sync-label">Cloud</span>
+            <span id="cloud-sync-dot" class="sync-dot-online"></span>
+          </button>
           <button id="btn-friends-toggle" class="icon-btn btn-friends-accent" title="Teman & Sahabat Backrooms">
             <span>👥 Sahabat</span>
             <span id="friends-badge" class="badge-count">3</span>
@@ -170,7 +179,8 @@
         <div style="font-size: 3rem; margin-bottom: 8px;">💥😡💥</div>
         <h2 class="modal-title" style="color: #ef4444;">KAMU DIPUKULI HINGGA RETAK!</h2>
         <p class="modal-desc">
-          Tungtungtung Sahur mengamuk hebat karena dibiarkan kelaparan dan kehausan di Backrooms! Dia melompat ke layar dan memukulimu dengan pemukul kentongan kayu hingga kacamu hancur berantakan!
+          Tungtungtung Sahur mengamuk hebat karena dibiarkan kelaparan dan kehausan di Backrooms! Dia melompat ke layar
+          dan memukulimu dengan pemukul kentongan kayu hingga kacamu hancur berantakan!
         </p>
         <button id="btn-apologize-treat" class="modal-btn" style="background:#ef4444; color:#fff;">
           Beri Ransum Darurat & Minta Maaf 🥣
@@ -184,7 +194,8 @@
         <div style="font-size: 3.5rem; margin-bottom: 8px;">🪦👻</div>
         <h2 class="modal-title" style="color: #94a3b8;">TUNGTUNGTUNG TELAH BERPULANG</h2>
         <p class="modal-desc">
-          Karena kesepian, kelaparan, dan tak terawat di dinginnya level 0 Backrooms, Tungtungtung Sahur menangis tersedu-sedu hingga arwahnya melayang ke alam baka...
+          Karena kesepian, kelaparan, dan tak terawat di dinginnya level 0 Backrooms, Tungtungtung Sahur menangis
+          tersedu-sedu hingga arwahnya melayang ke alam baka...
         </p>
         <button id="btn-revive-ritual" class="modal-btn" style="background:#10b981; color:#fff;">
           Lakukan Ritual Air Almond Sahur (Revive) ✨
@@ -236,7 +247,8 @@
           </button>
           <button class="friend-tab-btn" data-tab="tab-firebase-sync">
             <span>🔥 Firebase Global</span>
-            <span class="firebase-status-dot offline" id="firebase-status-indicator" title="Mode Offline/Firebase"></span>
+            <span class="firebase-status-dot offline" id="firebase-status-indicator"
+              title="Mode Offline/Firebase"></span>
           </button>
         </div>
 
@@ -268,7 +280,8 @@
               <input type="text" id="input-friend-code" placeholder="Cth: SAHUR-8821 atau username..." maxlength="24">
               <button id="btn-submit-add-friend" class="action-btn-primary">Tambah Sahabat</button>
             </div>
-            <p class="input-hint">💡 Bagikan ID Sahabatmu ke teman atau coba tambahkan penjelajah Backrooms di bawah!</p>
+            <p class="input-hint">💡 Bagikan ID Sahabatmu ke teman atau coba tambahkan penjelajah Backrooms di bawah!
+            </p>
           </div>
 
           <!-- Suggested Wanderers to Discover -->
@@ -328,35 +341,64 @@
             <div class="firebase-badge-row">
               <span class="fire-icon">🔥</span>
               <div>
-                <h3 style="color: #f59e0b; margin: 0; font-size: 1.15rem;">Koneksi Firebase Firestore Global</h3>
+                <h3 style="color: #f59e0b; margin: 0; font-size: 1.15rem;">Koneksi Firebase Cloud Global</h3>
                 <p style="font-size: 0.85rem; color: #d1d5db; margin: 2px 0 0 0;">
-                  Sinkronkan teman dan status Tungtung secara global ke seluruh dunia dengan akun Firebase-mu!
+                  Data Tungtung, sahabat, takjil, dan rekor permainan tersimpan otomatis ke cloud Firebase
+                  (<b>best-game-cfbfe</b>)!
                 </p>
               </div>
             </div>
 
             <div class="firebase-status-banner" id="firebase-connection-status-box">
-              <span class="status-indicator-icon" id="fb-status-icon">⚪</span>
-              <span id="fb-status-text">Status: <b>Mode Local Storage (Offline & Siap Dihubungkan)</b></span>
+              <span class="status-indicator-icon" id="fb-status-icon">🟢</span>
+              <span id="fb-status-text">Status: <b>Terhubung ke Firebase Global (best-game-cfbfe)</b></span>
+            </div>
+
+            <!-- Cloud Quick Actions -->
+            <div class="firebase-quick-actions-grid">
+              <button id="btn-force-cloud-save" class="action-btn-primary" style="flex: 1;">
+                ☁️ Simpan ke Cloud Sekarang
+              </button>
+              <button id="btn-force-cloud-load" class="action-btn-secondary" style="flex: 1;">
+                📥 Muat Ulang dari Cloud
+              </button>
+            </div>
+
+            <!-- Switch / Restore Existing Account ID -->
+            <div class="restore-account-box">
+              <label class="input-label">🔄 Masuk / Pulihkan Data dari ID Lain:</label>
+              <div class="input-with-button">
+                <input type="text" id="input-restore-id" placeholder="Cth: SAHUR-8821..." maxlength="20">
+                <button id="btn-restore-account" class="action-btn-secondary"
+                  style="border-color:#38bdf8; color:#bae6fd;">
+                  Pulihkan
+                </button>
+              </div>
+              <p class="input-hint">Gunakan fitur ini jika kamu ingin melanjutkan progres permainan dari laptop atau HP
+                lain.</p>
             </div>
 
             <div class="firebase-config-input-area">
-              <label class="input-label">Tempel Firebase Configuration (JSON Object):</label>
-              <textarea id="firebase-config-json" rows="5" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "game-backrooms.firebaseapp.com",\n  "projectId": "game-backrooms",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}'></textarea>
+              <label class="input-label">Konfigurasi Firebase Proyek (JSON):</label>
+              <textarea id="firebase-config-json" rows="6"
+                placeholder='{\n  "apiKey": "...",\n  "projectId": "best-game-cfbfe"\n}'></textarea>
               <div class="firebase-btn-row">
-                <button id="btn-save-firebase-config" class="action-btn-primary">🔥 Sambungkan ke Firebase</button>
-                <button id="btn-reset-firebase" class="action-btn-secondary">Reset ke Local</button>
+                <button id="btn-save-firebase-config" class="action-btn-primary">🔥 Perbarui Konfigurasi</button>
+                <button id="btn-reset-firebase" class="action-btn-secondary">Reset ke Default</button>
               </div>
             </div>
 
             <div class="firebase-instructions-accordion">
-              <details open>
-                <summary><b>📖 Cara Mendapatkan Firebase Config Gratis (3 Langkah Cepat):</b></summary>
-                <ol style="margin-top: 8px; padding-left: 20px; font-size: 0.85rem; line-height: 1.6; color: #fef08a;">
-                  <li>Buka <b><a href="https://console.firebase.google.com" target="_blank" style="color:#fde047;">console.firebase.google.com</a></b> dan buat Project baru (contoh: <code>tungtung-sahur</code>).</li>
-                  <li>Di menu kiri, pilih <b>Firestore Database</b> &gt; Klik <b>Create Database</b> (pilih Start in test mode).</li>
-                  <li>Buka <b>Project Settings (⚙️)</b> &gt; Bagian <i>Your apps</i> &gt; Pilih ikon Web (<b>&lt;/&gt;</b>) &gt; Copy objek <code>firebaseConfig</code> dan tempel ke kotak di atas!</li>
-                </ol>
+              <details>
+                <summary><b>ℹ️ Status Koleksi Database Cloud Firestore:</b></summary>
+                <ul style="margin-top: 8px; padding-left: 20px; font-size: 0.85rem; line-height: 1.6; color: #fef08a;">
+                  <li><b>tung_players/{playerId}</b>: Profil, status lapar/haus, kotoran, koin, dan kondisi Tungtung.
+                  </li>
+                  <li><b>tung_players/{playerId}/gifts</b>: Subkoleksi bingkisan takjil & kurma real-time dari sahabat.
+                  </li>
+                  <li><b>tung_leaderboard/{playerId}</b>: Rekor jarak pelarian dari Smiler dan perolehan koin sahur.
+                  </li>
+                </ul>
               </details>
             </div>
           </div>
@@ -367,7 +409,11 @@
 
   </div>
 
-  <!-- Scripts -->
+  <!-- Firebase SDKs & App Services -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+  <script src="src/firebase.js"></script>
   <script src="src/audio.js"></script>
   <script src="src/items.js"></script>
   <script src="src/character.js"></script>
@@ -375,4 +421,5 @@
   <script src="src/friends.js"></script>
   <script src="src/game.js"></script>
 </body>
+
 </html>
